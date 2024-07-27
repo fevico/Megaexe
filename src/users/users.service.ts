@@ -5,10 +5,13 @@ import { User } from './user.schema';
 import * as bcrypt from 'bcrypt'
 import * as jwt from "jsonwebtoken";
 import { CreateUserDto } from './dto/users.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
-    constructor(@InjectModel('User') private readonly UserModel: Model<User>){}
+    constructor(@InjectModel('User') private readonly UserModel: Model<User>,
+    private readonly jwtService: JwtService
+){}
 
     async create(userDto: CreateUserDto){
             const { name, password, email } = userDto;
@@ -27,7 +30,12 @@ export class UsersService {
             }
             const isPasswordValid = await bcrypt.compare(password, userFound.password);
             if(!isPasswordValid) throw new UnauthorizedException("Invalid credentials");
-            const token = jwt.sign({id: userFound._id, name: userFound.name}, "secret", {expiresIn: '1h'})
+            const payload = {
+                email: userFound.email,
+                id: userFound._id,
+                name: userFound.name
+              }
+            const token = await this.jwtService.sign(payload, {secret: process.env.JWT_SECRET})
             return {token}
          }
 }

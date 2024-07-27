@@ -1,30 +1,61 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+// post.service.ts
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post } from './post.schema';
-import { PostDto } from './dto/post.dto';
-
-interface PostInfo {
-    owner: string;
-    title: string;
-    image: string;
-    content: string
-}
+import { CloudinaryProvider } from '../cloudinary/cloudinary';
+import * as formidable from 'formidable';
+import { User } from 'src/users/user.schema';
 
 @Injectable()
 export class PostService {
-    constructor(@InjectModel('Post') private readonly PostModel: Model<Post>){}
+  constructor(
+    @InjectModel(Post.name) private postModel: Model<Post>,
+    @InjectModel(User.name) private userModel: Model<User>,
+    private cloudinaryProvider: CloudinaryProvider,
+  ) {}
 
-    async create(post: PostDto, id: string, name: string) {
-        const { title, owner, content, image, userId, categoryId } = post;
-        const newPost = new this.PostModel({ title, owner: name, content, image, userId: id, categoryId });
-        await newPost.save();
-        return newPost;
-    }
+  async uploadFile(file: formidable.File): Promise<string> {
+    return this.cloudinaryProvider.uploadFile(file);
+  }
 
-    async getUserPosts( id: string) {
-        const user = await this.PostModel.find({userId:id}).sort({ timestamp: -1 });
-        if(!user) throw new UnprocessableEntityException('This user does not have a post')
-        return user;
+  async create(post: any): Promise<Post> {
+    const user = await this.userModel.findById(post.userId).exec();
+    if(!user) throw new UnauthorizedException('User not found');
+    const createdPost = new this.postModel({
+      ...post,
+    });
+    return createdPost.save();
+  }
+
+  async getUserPosts(userId: string) {
+    const user = await this.userModel.findById(userId).exec();
+    if(!user) throw new UnauthorizedException('User not found');
+    const posts = await this.postModel.find({ userId }).exec();
+    if(!posts) throw new UnauthorizedException('no post found for this user');
+    return posts
+  }
+
+  async getAllPosts(){
+    const posts = await this.postModel.find().exec();
+    if(!posts) throw new UnauthorizedException('no post found');
+    return posts
+  }
+
+  async deletePost(postId: string, userId: string) {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
+    
+    const post = await this.postModel.findOne({ _id: postId, userId }).exec();
+    if (!post) {
+      throw new UnauthorizedException('Post not found, or you are not the owner of this post');
+    }
+    
+    await this.postModel.deleteOne({ _id: postId }).exec();
+    
+    return { message: 'Post deleted successfully' };
+  }
+  
 }

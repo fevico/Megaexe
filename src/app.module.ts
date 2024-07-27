@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -8,6 +8,9 @@ import { CategoryModule } from './category/category.module';
 import { PostModule } from './post/post.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { UserInterceptor } from './users/interceptor/user.interceptor';
+import { FormidableMiddleware } from './middleware/fileParser';
+import { CloudinaryProvider } from './cloudinary/cloudinary';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -24,11 +27,22 @@ import { UserInterceptor } from './users/interceptor/user.interceptor';
     UsersModule,
     CategoryModule,
     PostModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
-  providers: [AppService, {
-    provide: APP_INTERCEPTOR,
-    useClass: UserInterceptor
-  }],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserInterceptor,
+    },
+    CloudinaryProvider,
+  ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(FormidableMiddleware)
+      .forRoutes({ path: 'post/create', method: RequestMethod.POST });
+  }
+}

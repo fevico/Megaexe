@@ -1,0 +1,9 @@
+# Megaexe
+megaexe is a simple blog application built with Node.js, Express, and MongoDB. It includes features such as user authentication, category management, and post creation. The application uses JWT for authentication and Cloudinary for image handling.
+in my code snippet i worked on authentication which covers authentication methods like jwt,
+registration fields include name, email, and password.
+i work on category which includes name and description, create category and get all category
+i worked on post which include title, description, image, and category id, create post, get all post,
+ge user post and delete user post Note: before you can crate a post and delete user post you must be logged in.
+and also cloudinary interation is used to handle images you would have to set it up in your cloudinary account and get your cloud name, api key, and api secret key.
+

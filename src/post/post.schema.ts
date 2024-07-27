@@ -1,26 +1,25 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Schema as MongooseSchema } from "mongoose";
+
 
 @Schema({
     timestamps: true
 })
 export class Post {
-    @Prop()
+    @Prop({ type: String })
     title: string;
 
-  @Prop({ required: true })
-  content: string;
+  @Prop({ type: String})
+  descrpition: string;
 
-  @Prop({ required: true })
-  categoryId: string; 
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Category' }) // Specify ref option
+  categoryId: MongooseSchema.Types.ObjectId;
 
-  @Prop({ required: true })
-  userId: string;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
+  userId: MongooseSchema.Types.ObjectId;
 
-  @Prop()
+  @Prop({type: String})
   image: string;
-
-  @Prop({required: true})
-  owner: string
 
   @Prop({ type: [String], default: [] })
   comments: string[];
